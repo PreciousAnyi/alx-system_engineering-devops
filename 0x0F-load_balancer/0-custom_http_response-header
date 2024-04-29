@@ -1,9 +1,67 @@
 #!/usr/bin/env bash
-# Script that configures Nginx server with a custom header
+
+# Script that configures Nginx server with additional settings
+
+# Update package repositories
 apt-get -y update
+
+# Install Nginx
 apt-get -y install nginx
-echo "Hello World!" > /var/www/html/index.nginx-debian.html
-echo "Ceci n'est pas une page" > /usr/share/nginx/html/custom_404.html
-sed -i "s/server_name _;/server_name _;\n\trewrite ^\/redirect_me https:\/\/github.com\/preciousanyi permanent;\n\n\terror_page 404 \/custom_404.html;\n\tlocation = \/custom_404.html {\n\t\troot \/usr\/share\/nginx\/html;\n\t\tinternal;\n\t}/" /etc/nginx/sites-available/default
-sed -i "s/include \/etc\/nginx\/sites-enabled\/\*;/include \/etc\/nginx\/sites-enabled\/\*;\n\tadd_header X-Served-By \"$HOSTNAME\";/" /etc/nginx/nginx.conf
-service nginx start
+
+# Setting up Firewall Rules
+ufw allow 'Nginx HTTP'
+
+# Give the user ownership to website files for easy editing
+if [ -d "/var/www" ]; then
+    chown -R "$USER":"$USER" /var/www
+    chmod -R 755 /var/www
+else
+    mkdir -p /var/www
+    chown -R "$USER":"$USER" /var/www
+    chmod -R 755 /var/www
+fi
+
+# Create directories if not present
+for dir in /var/www/{html,error}; do
+    if ! [ -d "$dir" ]; then
+        mkdir -p "$dir"
+    fi
+done
+
+# Create new index
+echo "Hello World!" > /var/www/html/index.html
+
+# Create new error page
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
+
+# Backup default server config file
+cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.backup
+
+# Set server configuration
+server_config=$(cat <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+    server_name _;
+    add_header X-Served-By $hostname;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+    if ($request_filename ~ redirect_me){
+        rewrite ^ https://th3-gr00t.tk/ permanent;
+    }
+    error_page 404 /error_404.html;
+    location = /error_404.html {
+        internal;
+    }
+}
+EOF
+)
+
+echo "$server_config" | dd status=none of=/etc/nginx/sites-enabled/default
+
+# Restart Nginx service
+service nginx restart
+
