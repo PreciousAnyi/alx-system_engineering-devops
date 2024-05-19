@@ -56,16 +56,7 @@ EOF
 # Test the Nginx configuration for syntax errors
 nginx -t
 
-# If the configuration test is successful, start Nginx
-if [ $? -eq 0 ]; then
-    # Check if Nginx is running
-    if pgrep nginx > /dev/null; then
-        echo "Nginx is already running."
-    else
-        # Start Nginx
-        nginx
-    fi
-fi
+sudo service nginx start
 
 # Verify Nginx is listening on port 80
 ss -tuln | grep ':80'
