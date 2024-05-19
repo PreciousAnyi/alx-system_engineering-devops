@@ -52,9 +52,29 @@ Commercial support is available at
 </html>
 EOF
 
-# Restart Nginx to apply the changes
-service restart nginx
+
+# Test the Nginx configuration for syntax errors
+nginx -t
+
+# If the configuration test is successful, start Nginx
+if [ $? -eq 0 ]; then
+    # Check if Nginx is running
+    if pgrep nginx > /dev/null; then
+        echo "Nginx is already running."
+    else
+        # Start Nginx
+        nginx
+    fi
+fi
 
 # Verify Nginx is listening on port 80
 ss -tuln | grep ':80'
+# Check if Nginx is returning HTTP 200
+HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}\n" http://localhost)
 
+if [ "$HTTP_CODE" -eq 200 ]; then
+    echo "Nginx is serving the web page with HTTP 200"
+else
+    echo "Nginx is not serving the web page correctly. HTTP code: $HTTP_CODE"
+    exit 1
+fi
