@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Gracefully restart Gunicorn
 # Get the Gunicorn master PID
 gunicorn_pid=$(ps aux | grep -v grep | grep gunicorn | awk '{print $2}')
