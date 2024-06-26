@@ -1,19 +1,4 @@
 #!/usr/bin/env bash
 # Gracefully reloads Gunicorn.
 
-# Check if any Gunicorn processes are running
-if ! pgrep -x "gunicorn" >/dev/null; then
-    echo "No Gunicorn processes found."
-    exit 1
-fi
-
-# Gracefully reload Gunicorn by sending HUP signal
-pgrep -x "gunicorn" | xargs kill -HUP
-
-# Check if the reload was successful
-if [ $? -eq 0 ]; then
-    echo "Gunicorn reloaded successfully."
-else
-    echo "Failed to reload Gunicorn."
-    exit 1
-fi
+ps aux | grep gunicorn | awk '{ print $2 }' | xargs kill -HUP
